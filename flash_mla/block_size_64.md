@@ -1,18 +1,17 @@
-
-   Section: GPU Speed Of Light Throughput
+    Section: GPU Speed Of Light Throughput
     ----------------------- ------------- ------------
     Metric Name               Metric Unit Metric Value
     ----------------------- ------------- ------------
     DRAM Frequency          cycle/nsecond         2.62
-    SM Frequency            cycle/nsecond         1.64
-    Elapsed Cycles                  cycle       534862
-    Memory Throughput                   %        23.38
-    DRAM Throughput                     %        23.38
-    Duration                      usecond       324.80
-    L1/TEX Cache Throughput             %        19.35
-    L2 Cache Throughput                 %        23.98
-    SM Active Cycles                cycle    518383.56
-    Compute (SM) Throughput             %        85.58
+    SM Frequency            cycle/nsecond         1.65
+    Elapsed Cycles                  cycle       534870
+    Memory Throughput                   %        23.41
+    DRAM Throughput                     %        23.41
+    Duration                      usecond       324.32
+    L1/TEX Cache Throughput             %        19.37
+    L2 Cache Throughput                 %        23.82
+    SM Active Cycles                cycle    517833.53
+    Compute (SM) Throughput             %        85.63
     ----------------------- ------------- ------------
 
     INF   The kernel is utilizing greater than 80.0% of the available compute or memory performance of the device. To   
@@ -70,14 +69,14 @@
     -------------------------- ----------- ------------
     Metric Name                Metric Unit Metric Value
     -------------------------- ----------- ------------
-    Average DRAM Active Cycles       cycle    198841.50
-    Total DRAM Elapsed Cycles        cycle     40826880
-    Average L1 Active Cycles         cycle    518383.56
-    Total L1 Elapsed Cycles          cycle     41656416
-    Average L2 Active Cycles         cycle    245886.29
-    Total L2 Elapsed Cycles          cycle     52900128
-    Average SM Active Cycles         cycle    518383.56
-    Total SM Elapsed Cycles          cycle     41656416
-    Average SMSP Active Cycles       cycle    516604.19
-    Total SMSP Elapsed Cycles        cycle    166625664
+    Average DRAM Active Cycles       cycle    198824.83
+    Total DRAM Elapsed Cycles        cycle     40765440
+    Average L1 Active Cycles         cycle    517833.53
+    Total L1 Elapsed Cycles          cycle     41632408
+    Average L2 Active Cycles         cycle    229023.96
+    Total L2 Elapsed Cycles          cycle     52849440
+    Average SM Active Cycles         cycle    517833.53
+    Total SM Elapsed Cycles          cycle     41632408
+    Average SMSP Active Cycles       cycle    516581.60
+    Total SMSP Elapsed Cycles        cycle    166529632
     -------------------------- ----------- ------------
