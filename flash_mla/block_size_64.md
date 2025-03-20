@@ -1,4 +1,4 @@
-  void flash::flash_fwd_splitkv_mla_kernel<Flash_fwd_kernel_traits_mla<(int)576, (int)64, (int)64, (int)8, cutlass::bfloat16_t, (int)512>, (bool)0, flash::SharedStorageMLA<Flash_fwd_kernel_traits_mla<(int)576, (int)64, (int)64, (int)8, cutlass::bfloat16_t, (int)512>>>(Flash_fwd_mla_params) (1, 1, 78)x(256, 1, 1), Context 1, Stream 7, Device 0, CC 9.0
+ void flash::flash_fwd_splitkv_mla_kernel<Flash_fwd_kernel_traits_mla<(int)576, (int)64, (int)64, (int)8, cutlass::bfloat16_t, (int)512>, (bool)0, flash::SharedStorageMLA<Flash_fwd_kernel_traits_mla<(int)576, (int)64, (int)64, (int)8, cutlass::bfloat16_t, (int)512>>>(Flash_fwd_mla_params) (1, 1, 78)x(256, 1, 1), Context 1, Stream 7, Device 0, CC 9.0
     Section: GPU Speed Of Light Throughput
     ----------------------- ------------- ------------
     Metric Name               Metric Unit Metric Value
