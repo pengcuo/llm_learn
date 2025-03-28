@@ -73,18 +73,29 @@ int main() {
     using ElementAccum = float;
 
 
-    auto xx = cute::make_tensor<float>(cute::make_shape(cute::Int<10>{}, cute::Int<20>{}));
+    static constexpr int kSwizzle = 2;
+    static constexpr int kBlockKSmem = 16;
+    using SmemLayoutAtomO = decltype(composition(
+            Swizzle<kSwizzle, 3, 3>{},
+            Layout<Shape<Int<8>, Int<kBlockKSmem>>, Stride<Int<kBlockKSmem>, _1>>{}));
+            
+    using SmemLayoutO = decltype(tile_to_shape(
+            SmemLayoutAtomO{},
+            Shape<Int<kBlockM>, Int<kHeadDimV>>{}));
 
-    int idx = 10;
-    for (int i = 0; i < 10; ++i) {
-        for (int j = 0; j < 20; ++j) {
-            // xx(i, j) = i * 20 + j;  // 按行存储
+    auto xx = cute::make_tensor<float>(SmemLayoutO{});
+
+
+    print(SmemLayoutO{});
+    std::cout << std::endl;
+
+    int idx = 0;
+    for (int i = 0; i < kBlockM; ++i) {
+        for (int j = 0; j < kHeadDimV; ++j) {
             xx(i, j) = idx++;  // 按行存储
         }
     }
 
-    std::cout << "tensor(2, 3) = " << xx(2, 3) << std::endl;  // 2*20 + 3 = 43
-
+    std::cout << "tensor(2, 3) = " << xx(2, 3) << std::endl;  // 2*512 + 3 = 1027
     return 0;
-
 }
