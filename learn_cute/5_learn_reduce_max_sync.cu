@@ -12,19 +12,44 @@
 #include <chrono>
 
 
+namespace cg = cooperative_groups;
+
+/*
+__device__ float warp_stride_max(float val) {
+    auto warp = cg::tiled_partition<32>(cg::this_thread_block());
+    int lane_id = warp.thread_rank();  // 当前线程在 warp 中的 ID (0-31)
+    int group_id = lane_id % 4;        // 组 ID (0-3)
+
+    // 使用 labeled_partition 创建跨步分组（每组 8 线程）
+    auto group = cg::labeled_partition(warp, group_id);
+
+    // 组内求最大值（支持任意数据类型，如 float/int/double）
+    float max_val = cg::reduce(group, val, cg::maximum<float>());
+
+    return max_val;
+}
+*/
+
+__device__ float warp_stride_max(float val) {
+    auto warp = cg::tiled_partition<32>(cg::this_thread_block());
+    auto group = cg::labeled_partition(warp, warp.thread_rank() % 4);
+    return cg::reduce(group, val, [](float a, float b) { return max(a, b); });
+}
 
 
 __global__ void max_in_strided_groups(float *data, float *output) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    int lane_id = threadIdx.x % 32;  // lane_id in warp (0-31)
     float val = data[tid];
 
+    /*
+    int lane_id = threadIdx.x % 32;  // lane_id in warp (0-31)
     int int_val = __float_as_int(val);
     unsigned group_mask = 0x11111111 << (lane_id % 4);
     auto max_val_int = __reduce_max_sync(group_mask, int_val);
     auto max_v = __int_as_float(max_val_int);
+    */
+    float max_v = warp_stride_max(val);
     output[tid] = max_v;
-    //output[tid] = 1;
 }
 
 int main() {
