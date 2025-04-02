@@ -8,6 +8,10 @@
 #include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
 
+#include <random>
+#include <chrono>
+
+
 
 
 __global__ void max_in_strided_groups(float *data, float *output) {
@@ -15,10 +19,10 @@ __global__ void max_in_strided_groups(float *data, float *output) {
     int lane_id = threadIdx.x % 32;  // lane_id in warp (0-31)
     float val = data[tid];
 
-    uint32_t int_val = __float_as_uint(val);
+    int int_val = __float_as_int(val);
     unsigned group_mask = 0x11111111 << (lane_id % 4);
-    auto max_val_uint = __reduce_max_sync(group_mask, int_val);
-    auto max_v = __uint_as_float(max_val_uint);
+    auto max_val_int = __reduce_max_sync(group_mask, int_val);
+    auto max_v = __int_as_float(max_val_int);
     output[tid] = max_v;
     //output[tid] = 1;
 }
@@ -32,10 +36,17 @@ int main() {
     // 初始化数据（示例：0-31）
     float h_data[N];
 
+    //unsigned seed = 199;
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator(seed);
+    std::uniform_real_distribution<double> distribution(-10.0, 10.0);
+
     for(int i = 0; i < 8; ++i) {
         for(int j = 0; j < 4; ++j) {
             int idx = 4 * i + j;
-            h_data[idx] = rand() % 20;
+            //h_data[idx] = -rand() % 20;
+            h_data[idx] = (float)distribution(generator);
+
             printf("%.1f\t", h_data[idx]);
         }
         printf("\n");
