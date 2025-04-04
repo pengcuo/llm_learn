@@ -11,20 +11,33 @@ __global__ void max_4warps(float* data) {
     float val = data[tid];
     float global_max = val; // 初始化（后续会被覆盖）
 
+
+    cg::thread_block cta = cg::this_thread_block();
+    cg::thread_block_tile<32> warp = cg::tiled_partition<32>(cta);
+
     if (tid < 128) { // 仅前 4 个 warp 参与计算
-        cg::coalesced_group group = cg::coalesced_threads();
-        cg::thread_block_tile<32> warp = cg::tiled_partition<32>(group);
+        // cg::coalesced_group group = cg::coalesced_threads();
+        // cg::thread_block_tile<32> warp = cg::tiled_partition<32>(group);
 
         // 1. Warp 内归约
-        float warp_max = cg::reduce(warp, val, cg::greater<float>());
+        // float warp_max = cg::reduce(warp, val, cg::greater<float>());
 
-        // 2. 跨 Warp 归约（由每个 warp 的第一个线程完成）
-        if (warp.thread_rank() == 0) {
-            global_max = cg::reduce(group, warp_max, cg::greater<float>());
-        }
 
-        // 3. 广播到当前 warp 的所有线程
-        global_max = warp.shfl(global_max, 0);
+        cg::thread_block_tile<128> fourWarpsGroup = cg::tiled_partition<128>(cta);
+
+        // // 使用cg::reduce求最大值
+        
+        global_max = cg::reduce(fourWarpsGroup, val, cg::greater<float>());
+
+
+
+        // // 2. 跨 Warp 归约（由每个 warp 的第一个线程完成）
+        // if (warp.thread_rank() == 0) {
+        //     global_max = cg::reduce(group, warp_max, cg::greater<float>());
+        // }
+
+        // // 3. 广播到当前 warp 的所有线程
+        // global_max = warp.shfl(global_max, 0);
     }
 
     // 4. 将结果写回（仅前 4 个 warp 有效，后 4 个 warp 保持原值）
@@ -43,7 +56,7 @@ int main() {
 
     // 打印前 10 个值和真实最大值
     float true_max = 0;
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < 128; i++) {
         if (h_data[i] > true_max) true_max = h_data[i];
         if (i < 10) std::cout << "h_data[" << i << "] = " << h_data[i] << std::endl;
     }
@@ -61,7 +74,7 @@ int main() {
 
     // 验证结果
     bool correct = true;
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < 128; i++) {
         if (h_result[i] != true_max) {
             if (i < 128) { // 前 4 个 warp 应被覆盖为最大值
                 std::cerr << "Error at h_result[" << i << "] = " << h_result[i] 
