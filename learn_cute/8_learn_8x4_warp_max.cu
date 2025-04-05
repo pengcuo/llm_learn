@@ -9,7 +9,6 @@
 namespace cg = cooperative_groups;
 
 __device__ float group_4x8_4_max(float val) {
-
         __shared__ float shared_max[4][4];
 
         int lane = threadIdx.x % 32;
