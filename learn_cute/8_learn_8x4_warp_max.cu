@@ -3,54 +3,54 @@
 #include <cmath>
 #include <cooperative_groups/reduce.h>
 
+#include <cutlass/cutlass.h>
+
 
 namespace cg = cooperative_groups;
 
+__device__ float group_4x8_4_max(float val) {
+
+        __shared__ float shared_max[4][4];
+
+
+        int lane = threadIdx.x % 32;
+        int col = lane % 4;
+        int row = lane / 4;
+        int warp_id = threadIdx.x >> 5; // threadIdx.x / 32
+        cg::coalesced_group active = cg::coalesced_threads();
+        auto column_group = cg::labeled_partition(active, col);
+        
+        float max_val = cg::reduce(column_group, val, cg::greater<float>());
+        if(row == 0) {
+            shared_max[warp_id][col] = max_val;
+        }
+        __syncthreads();
+
+        float warp_max = shared_max[0][col];
+        for(int i = 0; i < 4; ++i) {
+            if(shared_max[i][col] > warp_max) {
+                warp_max = shared_max[i][col];
+            }
+        }
+
+        max_val = warp_max;       
+        return max_val;
+}
+
 __global__ void warp_8x4_max_reduce(float* data) {
+    int warp_group_idx = cutlass::canonical_warp_group_idx();
 
-    // cg::thread_block block = cg::this_thread_block();
-    cg::coalesced_group active = cg::coalesced_threads();
-
-    __shared__ float shared_max[4][4];
-
-    int lane = threadIdx.x % 32;
-    int col = lane % 4;
-    int row = lane / 4;
-    int warp_id = threadIdx.x >> 5; // threadIdx.x / 32
-    auto column_group = cg::labeled_partition(active, col);
-    
-    float val = data[blockIdx.x * blockDim.x + threadIdx.x];
-    float max_val = cg::reduce(column_group, val, cg::greater<float>());
-
-    if(row == 0) {
-        shared_max[warp_id][col] = max_val;
+    if(warp_group_idx == 0) {
+        float val = data[blockIdx.x * blockDim.x + threadIdx.x];
+        float max_val = group_4x8_4_max(val);
+        data[blockIdx.x * blockDim.x + threadIdx.x] = max_val;
     }
-    __syncthreads();
-
-    // if(row == 0) {
-    //     printf("threadIdx.x = %d, lane = %d, col = %d, row = %d, warp_id = %d %f\n", threadIdx.x, lane, col, row, warp_id, max_val
-    //     );
-    // }
-
-    // if(threadIdx.x == 0) {
-    //     for(int i = 0; i < 4; ++i) {
-    //         for(int j = 0; j < 4; ++j) {
-    //             printf("%f  ", shared_max[i][j]);
-    //         }
-    //         printf("\n");
-    //     }
-    // }
-
-    float warp_max = shared_max[0][col];
-    for(int i = 0; i < 4; ++i) {
-        if(shared_max[i][col] > warp_max) {
-            warp_max = shared_max[i][col];
+    else {
+        if(threadIdx.x == 128) {
+            printf("warp_group_idx %d threadIdx.x %d\n", warp_group_idx, threadIdx.x);
         }
     }
 
-    max_val = warp_max;
-    
-    data[blockIdx.x * blockDim.x + threadIdx.x] = max_val;
 }
 
 // 验证函数
@@ -91,7 +91,7 @@ bool verify_results(float* h_data, int num_elements, int warps_per_block) {
 }
 
 int main() {
-    const int warps_per_block = 4;  // 测试4个warp
+    const int warps_per_block = 8;  // 测试4个warp
     const int block_size = warps_per_block * 32;
     const int num_blocks = 1;
     const int num_elements = block_size * num_blocks;
@@ -109,9 +109,9 @@ int main() {
     
     // 设置一些特殊值作为最大值
     h_data[0] = 100.0f;   // warp0, 列0
-    h_data[5] = 200.0f;   // warp0, 列1 (lane5 = 1*8 + 1, 但实际是行优先布局)
-    h_data[34] = 300.0f;  // warp1, 列2 (lane2)
-    h_data[103] = 400.0f; // warp3, 列3 (lane7 = 3*32 + 7)
+    h_data[5] = 250.0f;   // warp0, 列1 (lane5 = 1*8 + 1, 但实际是行优先布局)
+    h_data[34] = 377.0f;  // warp1, 列2 (lane2)
+    h_data[103] = 423.0f; // warp3, 列3 (lane7 = 3*32 + 7)
 
 
     for(int r = 0; r < 32; ++r) {
